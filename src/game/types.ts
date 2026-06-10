@@ -29,6 +29,13 @@ export type Platform = {
   update?: (time: number, dt: number) => void;
 };
 
+export type Barrier = {
+  id: string;
+  center: THREE.Vector3;
+  size: THREE.Vector3;
+  mesh: THREE.Object3D;
+};
+
 export type Collectible = {
   id: string;
   kind: "seed" | "secret";
@@ -92,6 +99,7 @@ export type LoreMarker = {
 export type WorldState = {
   scene: THREE.Scene;
   platforms: Platform[];
+  barriers: Barrier[];
   collectibles: Collectible[];
   bells: Bell[];
   checkpoints: Checkpoint[];

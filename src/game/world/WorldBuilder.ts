@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {
+  Barrier,
   Bell,
   Checkpoint,
   Collectible,
@@ -29,6 +30,7 @@ import {
 
 export class WorldBuilder {
   readonly platforms: Platform[] = [];
+  readonly barriers: Barrier[] = [];
   readonly collectibles: Collectible[] = [];
   readonly bells: Bell[] = [];
   readonly checkpoints: Checkpoint[] = [];
@@ -57,6 +59,7 @@ export class WorldBuilder {
     return {
       scene: this.scene,
       platforms: this.platforms,
+      barriers: this.barriers,
       collectibles: this.collectibles,
       bells: this.bells,
       checkpoints: this.checkpoints,
@@ -105,6 +108,7 @@ export class WorldBuilder {
     this.scene.add(skyOrb);
 
     this.createDistantClouds();
+    this.createCloudSea();
 
     for (let i = 0; i < 42; i += 1) {
       const star = new THREE.Mesh(
@@ -158,6 +162,36 @@ export class WorldBuilder {
     }
   }
 
+  private createCloudSea(): void {
+    const cloudMat = new THREE.MeshBasicMaterial({
+      color: "#d8f3ff",
+      transparent: true,
+      opacity: 0.16,
+      depthWrite: false,
+      fog: false
+    });
+    const roseMat = new THREE.MeshBasicMaterial({
+      color: "#ffd2c2",
+      transparent: true,
+      opacity: 0.11,
+      depthWrite: false,
+      fog: false
+    });
+
+    for (let i = 0; i < 34; i += 1) {
+      const cloud = new THREE.Mesh(
+        new THREE.DodecahedronGeometry(1.2 + (i % 5) * 0.28, 0),
+        i % 3 === 0 ? roseMat : cloudMat
+      );
+      const angle = i * 2.16;
+      const radius = 18 + (i % 9) * 5.7;
+      cloud.position.set(Math.cos(angle) * radius, -12.8 - (i % 4) * 0.45, Math.sin(angle) * radius);
+      cloud.scale.set(4.6 + (i % 4) * 1.1, 0.42, 2.2 + (i % 3) * 0.7);
+      cloud.rotation.y = angle * 0.37;
+      this.scene.add(cloud);
+    }
+  }
+
   private createStaticRoute(): void {
     this.addPlatform("home-orchard", new THREE.Vector3(-4, 0, 3), new THREE.Vector3(19, 2, 14), palette.grass);
     this.addPlatform("east-yard", new THREE.Vector3(10, 0.6, 1.5), new THREE.Vector3(10, 2, 12), "#62c66a");
@@ -189,25 +223,54 @@ export class WorldBuilder {
       moving.velocity = moving.center.clone().sub(previous).divideScalar(Math.max(0.001, dt));
     };
 
-    this.createSkyRails();
+    this.createBoundaryRails();
   }
 
-  private createSkyRails(): void {
-    const railMat = makeMat("#87634a");
-    const railPoints = [
-      new THREE.Vector3(-11, 1.3, 9.7),
-      new THREE.Vector3(-8, 1.3, 9.7),
-      new THREE.Vector3(8, 1.8, 7.2),
-      new THREE.Vector3(12.4, 1.8, 7.2),
-      new THREE.Vector3(2.9, 5.6, -19.6),
-      new THREE.Vector3(7.1, 5.6, -19.6)
-    ];
-    for (const point of railPoints) {
-      const rail = new THREE.Mesh(new THREE.BoxGeometry(0.18, 1, 0.18), railMat);
-      rail.position.copy(point);
-      rail.castShadow = true;
-      this.scene.add(rail);
-    }
+  private createBoundaryRails(): void {
+    this.addRailSegment("home-north-west", new THREE.Vector3(-7.85, 1.48, -4.16), new THREE.Vector3(10.8, 0.96, 0.34));
+    this.addRailSegment("home-north-east", new THREE.Vector3(3.85, 1.48, -4.16), new THREE.Vector3(3.4, 0.96, 0.34));
+    this.addRailSegment("home-west-lower", new THREE.Vector3(-13.64, 1.48, -0.35), new THREE.Vector3(0.34, 0.96, 7.3));
+    this.addRailSegment("home-west-upper", new THREE.Vector3(-13.64, 1.48, 8.55), new THREE.Vector3(0.34, 0.96, 2.7));
+    this.addRailSegment("home-south", new THREE.Vector3(-4, 1.48, 10.14), new THREE.Vector3(18.6, 0.96, 0.34));
+    this.addRailSegment("home-east-south", new THREE.Vector3(5.64, 1.48, 8.7), new THREE.Vector3(0.34, 0.96, 2.5));
+
+    this.addRailSegment("east-yard-south", new THREE.Vector3(10, 2.08, 7.66), new THREE.Vector3(9.4, 0.96, 0.34));
+    this.addRailSegment("east-yard-north-west", new THREE.Vector3(8.8, 2.08, -4.66), new THREE.Vector3(7.1, 0.96, 0.34));
+    this.addRailSegment("east-yard-east", new THREE.Vector3(15.16, 2.08, 2.6), new THREE.Vector3(0.34, 0.96, 9.6));
+
+    this.addRailSegment("lower-west", new THREE.Vector3(-26.66, -2.72, 6), new THREE.Vector3(0.34, 0.96, 11.4));
+    this.addRailSegment("lower-south", new THREE.Vector3(-20, -2.72, 12.16), new THREE.Vector3(12.4, 0.96, 0.34));
+    this.addRailSegment("lower-east-south", new THREE.Vector3(-13.34, -2.72, 9.35), new THREE.Vector3(0.34, 0.96, 5.1));
+    this.addRailSegment("lower-east-north", new THREE.Vector3(-13.34, -2.72, 1.45), new THREE.Vector3(0.34, 0.96, 2.9));
+    this.addRailSegment("lower-north-west", new THREE.Vector3(-25.0, -2.72, -0.16), new THREE.Vector3(3.0, 0.96, 0.34));
+    this.addRailSegment("lower-north-east", new THREE.Vector3(-16.6, -2.72, -0.16), new THREE.Vector3(6.6, 0.96, 0.34));
+
+    this.addRailSegment("cave-west", new THREE.Vector3(-32.66, -6.72, -11), new THREE.Vector3(0.34, 0.96, 8.4));
+    this.addRailSegment("cave-north", new THREE.Vector3(-27, -6.72, -15.66), new THREE.Vector3(10.4, 0.96, 0.34));
+    this.addRailSegment("cave-east", new THREE.Vector3(-21.34, -6.72, -11.4), new THREE.Vector3(0.34, 0.96, 7.8));
+    this.addRailSegment("cave-south-west", new THREE.Vector3(-30.1, -6.72, -6.34), new THREE.Vector3(4.8, 0.96, 0.34));
+
+    this.addRailSegment("ridge-west", new THREE.Vector3(-1.66, 5.28, -15), new THREE.Vector3(0.34, 0.96, 9.4));
+    this.addRailSegment("ridge-east", new THREE.Vector3(11.66, 5.28, -15), new THREE.Vector3(0.34, 0.96, 9.4));
+    this.addRailSegment("ridge-south-left", new THREE.Vector3(-0.6, 5.28, -9.84), new THREE.Vector3(1.8, 0.96, 0.34));
+    this.addRailSegment("ridge-south-right", new THREE.Vector3(7.0, 5.28, -9.84), new THREE.Vector3(8.5, 0.96, 0.34));
+    this.addRailSegment("ridge-north-left", new THREE.Vector3(0.2, 5.28, -20.16), new THREE.Vector3(3.4, 0.96, 0.34));
+    this.addRailSegment("ridge-north-right", new THREE.Vector3(9.0, 5.28, -20.16), new THREE.Vector3(5.0, 0.96, 0.34));
+
+    this.addRailSegment("hill-west", new THREE.Vector3(-0.66, 8.68, -26), new THREE.Vector3(0.34, 0.96, 11.4));
+    this.addRailSegment("hill-east", new THREE.Vector3(10.66, 8.68, -26), new THREE.Vector3(0.34, 0.96, 11.4));
+    this.addRailSegment("hill-north", new THREE.Vector3(5, 8.68, -32.16), new THREE.Vector3(10.4, 0.96, 0.34));
+    this.addRailSegment("hill-south-left", new THREE.Vector3(1.0, 8.68, -19.84), new THREE.Vector3(3.0, 0.96, 0.34));
+    this.addRailSegment("hill-south-right", new THREE.Vector3(9.0, 8.68, -19.84), new THREE.Vector3(3.0, 0.96, 0.34));
+
+    this.addRailSegment("approach-north", new THREE.Vector3(28.8, 8.98, -10.76), new THREE.Vector3(5.0, 0.86, 0.3));
+    this.addRailSegment("approach-south", new THREE.Vector3(28.8, 8.98, -6.24), new THREE.Vector3(5.0, 0.86, 0.3));
+
+    this.addRailSegment("shrine-north", new THREE.Vector3(35.5, 10.38, -15.16), new THREE.Vector3(12.4, 0.96, 0.34));
+    this.addRailSegment("shrine-south", new THREE.Vector3(35.5, 10.38, -1.84), new THREE.Vector3(12.4, 0.96, 0.34));
+    this.addRailSegment("shrine-east", new THREE.Vector3(42.16, 10.38, -8.5), new THREE.Vector3(0.34, 0.96, 12.4));
+    this.addRailSegment("shrine-west-upper", new THREE.Vector3(28.84, 10.38, -12.9), new THREE.Vector3(0.34, 0.96, 4.2));
+    this.addRailSegment("shrine-west-lower", new THREE.Vector3(28.84, 10.38, -4.1), new THREE.Vector3(0.34, 0.96, 4.2));
   }
 
   private createDecorations(): void {
@@ -480,9 +543,16 @@ export class WorldBuilder {
 
   private addBridge(id: string, center: THREE.Vector3, size: THREE.Vector3, rotation: number): Platform {
     const mesh = createLowPolyBox(size, "#a47a50", center);
-    mesh.rotation.y = rotation;
-    const railA = createLowPolyBox(new THREE.Vector3(size.x, 0.18, 0.16), "#6b4a35", new THREE.Vector3(0, 0.48, size.z / 2));
-    const railB = createLowPolyBox(new THREE.Vector3(size.x, 0.18, 0.16), "#6b4a35", new THREE.Vector3(0, 0.48, -size.z / 2));
+    const longAlongX = size.x >= size.z;
+    const visualRailSize = longAlongX
+      ? new THREE.Vector3(size.x, 0.34, 0.18)
+      : new THREE.Vector3(0.18, 0.34, size.z);
+    const visualRailA = longAlongX
+      ? new THREE.Vector3(0, 0.5, size.z / 2 + 0.02)
+      : new THREE.Vector3(size.x / 2 + 0.02, 0.5, 0);
+    const visualRailB = visualRailA.clone().multiply(new THREE.Vector3(longAlongX ? 1 : -1, 1, longAlongX ? -1 : 1));
+    const railA = createLowPolyBox(visualRailSize, "#6b4a35", visualRailA);
+    const railB = createLowPolyBox(visualRailSize, "#6b4a35", visualRailB);
     const group = new THREE.Group();
     group.position.copy(center);
     mesh.position.set(0, 0, 0);
@@ -498,7 +568,66 @@ export class WorldBuilder {
       velocity: new THREE.Vector3()
     };
     this.platforms.push(platform);
+    this.addBridgeBarrier(`${id}-rail-a`, center, size, rotation, 1);
+    this.addBridgeBarrier(`${id}-rail-b`, center, size, rotation, -1);
     return platform;
+  }
+
+  private addBridgeBarrier(id: string, center: THREE.Vector3, size: THREE.Vector3, rotation: number, side: 1 | -1): void {
+    const longAlongX = size.x >= size.z;
+    const railThickness = 0.36;
+    const railHeight = 0.92;
+    const local = longAlongX
+      ? new THREE.Vector3(0, size.y / 2 + railHeight / 2, side * (size.z / 2 + railThickness / 2))
+      : new THREE.Vector3(side * (size.x / 2 + railThickness / 2), size.y / 2 + railHeight / 2, 0);
+    const worldCenter = center.clone().add(local.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), rotation));
+    const baseSize = longAlongX
+      ? new THREE.Vector3(size.x, railHeight, railThickness)
+      : new THREE.Vector3(railThickness, railHeight, size.z);
+    const cos = Math.abs(Math.cos(rotation));
+    const sin = Math.abs(Math.sin(rotation));
+    const aabbSize = new THREE.Vector3(
+      baseSize.x * cos + baseSize.z * sin,
+      baseSize.y,
+      baseSize.x * sin + baseSize.z * cos
+    );
+    this.addRailSegment(id, worldCenter, aabbSize, false);
+  }
+
+  private addRailSegment(id: string, center: THREE.Vector3, size: THREE.Vector3, addPosts = true): Barrier {
+    const group = new THREE.Group();
+    const plank = createLowPolyBox(size, "#6a4a36", new THREE.Vector3(0, 0, 0));
+    group.add(plank);
+
+    if (addPosts) {
+      const postSize = size.x >= size.z
+        ? new THREE.Vector3(0.22, size.y + 0.12, Math.min(0.28, size.z + 0.06))
+        : new THREE.Vector3(Math.min(0.28, size.x + 0.06), size.y + 0.12, 0.22);
+      const longAxis = size.x >= size.z ? "x" : "z";
+      const halfLength = (longAxis === "x" ? size.x : size.z) / 2;
+      const postCount = Math.max(2, Math.min(5, Math.floor(halfLength / 2.4) + 1));
+      for (let i = 0; i < postCount; i += 1) {
+        const t = postCount === 1 ? 0 : i / (postCount - 1);
+        const post = createLowPolyBox(postSize, "#835f43", new THREE.Vector3(0, 0.04, 0));
+        if (longAxis === "x") {
+          post.position.x = -halfLength + t * halfLength * 2;
+        } else {
+          post.position.z = -halfLength + t * halfLength * 2;
+        }
+        group.add(post);
+      }
+    }
+
+    group.position.copy(center);
+    this.scene.add(group);
+    const barrier = {
+      id,
+      center: center.clone(),
+      size: size.clone(),
+      mesh: group
+    };
+    this.barriers.push(barrier);
+    return barrier;
   }
 
   private addSeed(position: THREE.Vector3): void {

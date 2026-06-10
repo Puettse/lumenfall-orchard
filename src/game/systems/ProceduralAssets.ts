@@ -21,17 +21,23 @@ export const palette = {
 export const makeMat = (
   color: string,
   options: { emissive?: string; roughness?: number; metalness?: number; transparent?: boolean; opacity?: number } = {}
-): THREE.MeshStandardMaterial =>
-  new THREE.MeshStandardMaterial({
+): THREE.MeshStandardMaterial => {
+  const materialOptions: THREE.MeshStandardMaterialParameters = {
     color,
     emissive: options.emissive ?? "#000000",
     emissiveIntensity: options.emissive ? 0.6 : 0,
     roughness: options.roughness ?? 0.82,
     metalness: options.metalness ?? 0.02,
-    flatShading: true,
-    transparent: options.transparent,
-    opacity: options.opacity
-  });
+    flatShading: true
+  };
+  if (options.transparent !== undefined) {
+    materialOptions.transparent = options.transparent;
+  }
+  if (options.opacity !== undefined) {
+    materialOptions.opacity = options.opacity;
+  }
+  return new THREE.MeshStandardMaterial(materialOptions);
+};
 
 export const createLowPolyBox = (
   size: THREE.Vector3,

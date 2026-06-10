@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { FrameInput, Platform } from "../types";
+import { Barrier, FrameInput, Platform } from "../types";
 import { createPlayerMesh } from "./ProceduralAssets";
 
 export type PlayerEvents = {
@@ -71,7 +71,7 @@ export class PlayerController {
     return true;
   }
 
-  update(dt: number, input: FrameInput, cameraYaw: number, platforms: Platform[]): PlayerEvents {
+  update(dt: number, input: FrameInput, cameraYaw: number, platforms: Platform[], barriers: Barrier[]): PlayerEvents {
     const events: PlayerEvents = {
       jumped: false,
       dashed: false,
@@ -144,8 +144,9 @@ export class PlayerController {
     }
     this.velocity.y = Math.min(this.velocity.y, 18);
 
+    this.moveHorizontally(this.velocity.x * dt, this.velocity.z * dt, barriers);
     const previousY = this.position.y;
-    this.position.addScaledVector(this.velocity, dt);
+    this.position.y += this.velocity.y * dt;
     this.resolveGround(previousY, platforms);
 
     if (!events.jumped && this.jumpBufferTimer > 0 && this.grounded) {
@@ -180,7 +181,10 @@ export class PlayerController {
     for (const platform of platforms) {
       const withinX = Math.abs(this.position.x - platform.center.x) <= platform.size.x / 2 + radius;
       const withinZ = Math.abs(this.position.z - platform.center.z) <= platform.size.z / 2 + radius;
-      const crossedTop = this.velocity.y <= 0 && previousY >= platform.top - 0.1 && this.position.y <= platform.top + 0.28;
+      const crossedTop =
+        this.velocity.y <= 0 &&
+        previousY >= platform.top - 0.18 &&
+        this.position.y <= platform.top + Math.max(0.45, previousY - this.position.y + 0.08);
       if (withinX && withinZ && crossedTop && platform.top > bestTop) {
         bestTop = platform.top;
         bestPlatform = platform;
@@ -193,6 +197,58 @@ export class PlayerController {
       this.grounded = true;
       this.groundedPlatform = bestPlatform;
     }
+  }
+
+  private moveHorizontally(dx: number, dz: number, barriers: Barrier[]): void {
+    if (dx !== 0) {
+      this.position.x += dx;
+      if (this.resolveBarrierOverlaps(barriers).blockedX) {
+        this.velocity.x = 0;
+      }
+    }
+
+    if (dz !== 0) {
+      this.position.z += dz;
+      if (this.resolveBarrierOverlaps(barriers).blockedZ) {
+        this.velocity.z = 0;
+      }
+    }
+  }
+
+  private resolveBarrierOverlaps(barriers: Barrier[]): { blockedX: boolean; blockedZ: boolean } {
+    const radius = 0.48;
+    const playerMinY = this.position.y + 0.08;
+    const playerMaxY = this.position.y + 1.68;
+    let blockedX = false;
+    let blockedZ = false;
+
+    for (const barrier of barriers) {
+      const minY = barrier.center.y - barrier.size.y / 2;
+      const maxY = barrier.center.y + barrier.size.y / 2;
+      if (playerMaxY < minY || playerMinY > maxY) {
+        continue;
+      }
+
+      const halfX = barrier.size.x / 2 + radius;
+      const halfZ = barrier.size.z / 2 + radius;
+      const deltaX = this.position.x - barrier.center.x;
+      const deltaZ = this.position.z - barrier.center.z;
+      const overlapX = halfX - Math.abs(deltaX);
+      const overlapZ = halfZ - Math.abs(deltaZ);
+      if (overlapX <= 0 || overlapZ <= 0) {
+        continue;
+      }
+
+      if (overlapX < overlapZ) {
+        this.position.x += signedPush(deltaX, this.velocity.x) * overlapX;
+        blockedX = true;
+      } else {
+        this.position.z += signedPush(deltaZ, this.velocity.z) * overlapZ;
+        blockedZ = true;
+      }
+    }
+
+    return { blockedX, blockedZ };
   }
 
   private animate(dt: number, moving: boolean): void {
@@ -267,4 +323,14 @@ const approach = (value: number, target: number, step: number): number => {
 const lerpAngle = (current: number, target: number, amount: number): number => {
   const delta = ((((target - current) % (Math.PI * 2)) + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
   return current + delta * Math.min(1, amount);
+};
+
+const signedPush = (delta: number, velocity: number): number => {
+  if (Math.abs(delta) > 0.0001) {
+    return Math.sign(delta);
+  }
+  if (Math.abs(velocity) > 0.0001) {
+    return -Math.sign(velocity);
+  }
+  return 1;
 };

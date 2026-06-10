@@ -303,7 +303,7 @@ export class LumenfallGame {
     if (this.mode === GameMode.Playing) {
       this.elapsed += dt;
       this.cameraYaw += frameInput.cameraX * dt * 1.7 + frameInput.pointerLookX;
-      const events = this.player.update(dt, frameInput, this.cameraYaw, this.world.platforms);
+      const events = this.player.update(dt, frameInput, this.cameraYaw, this.world.platforms, this.world.barriers);
       if (events.jumped) {
         this.debugJumpCount += 1;
         const jumpSource = this.lastInputDebug.source.jumpPressedSource || "buffer";
@@ -593,7 +593,10 @@ export class LumenfallGame {
     this.cameraRaycaster.set(target, direction);
     this.cameraRaycaster.far = distance;
     const hits = this.cameraRaycaster.intersectObjects(
-      this.world.platforms.map((platform) => platform.mesh),
+      [
+        ...this.world.platforms.map((platform) => platform.mesh),
+        ...this.world.barriers.map((barrier) => barrier.mesh)
+      ],
       true
     );
     const hit = hits.find((candidate) => candidate.distance > 1.2);
@@ -828,6 +831,7 @@ export class LumenfallGame {
         maxY: Number(this.debugMaxY.toFixed(2))
       },
       jumpSources: this.debugJumpSources,
+      barriers: this.world.barriers.length,
       pixels
     });
   }
