@@ -12,6 +12,7 @@ export type PlayerEvents = {
 const scratchForward = new THREE.Vector3();
 const scratchRight = new THREE.Vector3();
 const scratchDesired = new THREE.Vector3();
+const scratchPush = new THREE.Vector3();
 
 export class PlayerController {
   readonly mesh = createPlayerMesh();
@@ -56,6 +57,10 @@ export class PlayerController {
 
   setCheckpoint(position: THREE.Vector3): void {
     this.checkpoint.copy(position).add(new THREE.Vector3(0, 1.2, 0));
+  }
+
+  getGroundedPlatformId(): string | null {
+    return this.groundedPlatform?.id ?? null;
   }
 
   damage(amount: number): boolean {
@@ -177,15 +182,30 @@ export class PlayerController {
     let bestTop = -Infinity;
     let bestPlatform: Platform | null = null;
     const radius = 0.56;
+    const stepUp = 0.78;
+    const snapDown = 1.18;
 
     for (const platform of platforms) {
-      const withinX = Math.abs(this.position.x - platform.center.x) <= platform.size.x / 2 + radius;
-      const withinZ = Math.abs(this.position.z - platform.center.z) <= platform.size.z / 2 + radius;
+      const withinPlatform = pointWithinRotatedRect(
+        this.position.x,
+        this.position.z,
+        platform.center.x,
+        platform.center.z,
+        platform.size.x / 2 + radius,
+        platform.size.z / 2 + radius,
+        platform.rotationY ?? 0
+      );
       const crossedTop =
         this.velocity.y <= 0 &&
         previousY >= platform.top - 0.18 &&
         this.position.y <= platform.top + Math.max(0.45, previousY - this.position.y + 0.08);
-      if (withinX && withinZ && crossedTop && platform.top > bestTop) {
+      const snappedFromAdjacentSurface =
+        this.previousGrounded &&
+        this.velocity.y <= 1.2 &&
+        platform.top <= previousY + stepUp &&
+        platform.top >= previousY - snapDown &&
+        this.position.y <= previousY + stepUp + 0.12;
+      if (withinPlatform && (crossedTop || snappedFromAdjacentSurface) && platform.top > bestTop) {
         bestTop = platform.top;
         bestPlatform = platform;
       }
@@ -229,23 +249,29 @@ export class PlayerController {
         continue;
       }
 
+      const rotationY = barrier.rotationY ?? 0;
+      const local = worldToLocalXZ(this.position.x, this.position.z, barrier.center.x, barrier.center.z, rotationY);
       const halfX = barrier.size.x / 2 + radius;
       const halfZ = barrier.size.z / 2 + radius;
-      const deltaX = this.position.x - barrier.center.x;
-      const deltaZ = this.position.z - barrier.center.z;
+      const deltaX = local.x;
+      const deltaZ = local.z;
       const overlapX = halfX - Math.abs(deltaX);
       const overlapZ = halfZ - Math.abs(deltaZ);
       if (overlapX <= 0 || overlapZ <= 0) {
         continue;
       }
 
+      scratchPush.set(0, 0, 0);
       if (overlapX < overlapZ) {
-        this.position.x += signedPush(deltaX, this.velocity.x) * overlapX;
-        blockedX = true;
+        scratchPush.x = signedPush(deltaX, this.velocity.x) * overlapX;
       } else {
-        this.position.z += signedPush(deltaZ, this.velocity.z) * overlapZ;
-        blockedZ = true;
+        scratchPush.z = signedPush(deltaZ, this.velocity.z) * overlapZ;
       }
+      rotateLocalPushToWorld(scratchPush, rotationY);
+      this.position.x += scratchPush.x;
+      this.position.z += scratchPush.z;
+      blockedX ||= Math.abs(scratchPush.x) > 0.0001;
+      blockedZ ||= Math.abs(scratchPush.z) > 0.0001;
     }
 
     return { blockedX, blockedZ };
@@ -333,4 +359,46 @@ const signedPush = (delta: number, velocity: number): number => {
     return -Math.sign(velocity);
   }
   return 1;
+};
+
+const pointWithinRotatedRect = (
+  x: number,
+  z: number,
+  centerX: number,
+  centerZ: number,
+  halfX: number,
+  halfZ: number,
+  rotationY: number
+): boolean => {
+  const local = worldToLocalXZ(x, z, centerX, centerZ, rotationY);
+  return Math.abs(local.x) <= halfX && Math.abs(local.z) <= halfZ;
+};
+
+const worldToLocalXZ = (
+  x: number,
+  z: number,
+  centerX: number,
+  centerZ: number,
+  rotationY: number
+): { x: number; z: number } => {
+  const dx = x - centerX;
+  const dz = z - centerZ;
+  const cos = Math.cos(rotationY);
+  const sin = Math.sin(rotationY);
+  return {
+    x: dx * cos - dz * sin,
+    z: dx * sin + dz * cos
+  };
+};
+
+const rotateLocalPushToWorld = (push: THREE.Vector3, rotationY: number): void => {
+  if (rotationY === 0) {
+    return;
+  }
+  const localX = push.x;
+  const localZ = push.z;
+  const cos = Math.cos(rotationY);
+  const sin = Math.sin(rotationY);
+  push.x = localX * cos + localZ * sin;
+  push.z = -localX * sin + localZ * cos;
 };

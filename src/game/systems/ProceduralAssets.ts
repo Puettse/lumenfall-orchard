@@ -22,18 +22,17 @@ export const makeMat = (
   color: string,
   options: { emissive?: string; roughness?: number; metalness?: number; transparent?: boolean; opacity?: number } = {}
 ): THREE.MeshStandardMaterial => {
-  const materialOptions: THREE.MeshStandardMaterialParameters = {
-    color,
-    emissive: options.emissive ?? "#000000",
-    emissiveIntensity: options.emissive ? 0.6 : 0,
-    roughness: options.roughness ?? 0.82,
-    metalness: options.metalness ?? 0.02,
-    flatShading: true
-  };
-  if (options.transparent !== undefined) {
+  const materialOptions: THREE.MeshStandardMaterialParameters = {};
+  materialOptions.color = color;
+  materialOptions.emissive = options.emissive ?? "#000000";
+  materialOptions.emissiveIntensity = options.emissive ? 0.6 : 0;
+  materialOptions.roughness = options.roughness ?? 0.82;
+  materialOptions.metalness = options.metalness ?? 0.02;
+  materialOptions.flatShading = true;
+  if (typeof options.transparent === "boolean") {
     materialOptions.transparent = options.transparent;
   }
-  if (options.opacity !== undefined) {
+  if (typeof options.opacity === "number") {
     materialOptions.opacity = options.opacity;
   }
   return new THREE.MeshStandardMaterial(materialOptions);

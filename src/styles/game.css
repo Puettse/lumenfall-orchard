@@ -112,15 +112,23 @@ button.primary {
   display: block;
 }
 
+.viewport canvas {
+  filter: saturate(1.12) contrast(1.05);
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 .scanlines {
   position: absolute;
   inset: 0;
   pointer-events: none;
   background:
-    linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    radial-gradient(circle at center, transparent, rgba(0, 0, 0, 0.18));
-  background-size: 100% 4px, auto;
+    linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 120, 190, 0.025) 1px, transparent 1px),
+    radial-gradient(circle at center, transparent 58%, rgba(0, 0, 0, 0.22));
+  background-size: 100% 4px, 6px 100%, auto;
   mix-blend-mode: soft-light;
+  opacity: 0.9;
 }
 
 .hurt-vignette {

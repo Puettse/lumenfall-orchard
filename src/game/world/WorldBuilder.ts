@@ -195,6 +195,8 @@ export class WorldBuilder {
   private createStaticRoute(): void {
     this.addPlatform("home-orchard", new THREE.Vector3(-4, 0, 3), new THREE.Vector3(19, 2, 14), palette.grass);
     this.addPlatform("east-yard", new THREE.Vector3(10, 0.6, 1.5), new THREE.Vector3(10, 2, 12), "#62c66a");
+    this.addPlatform("orchard-east-step", new THREE.Vector3(4.72, 0.62, 1.5), new THREE.Vector3(1.35, 1.24, 11.1), "#58bd68");
+    this.addPlatform("east-bridge-mouth", new THREE.Vector3(14.65, 1.15, -4.5), new THREE.Vector3(1.9, 1.25, 2.8), "#5fc66d");
     this.addPlatform("lower-grove", new THREE.Vector3(-20, -4.2, 6), new THREE.Vector3(13, 2, 12), "#4fbf7f");
     this.addPlatform("waterfall-cave", new THREE.Vector3(-27, -8.2, -11), new THREE.Vector3(11, 2, 9), "#50667d");
     this.addPlatform("ridge-base", new THREE.Vector3(5, 3.8, -15), new THREE.Vector3(13, 2, 10), "#6ed071");
@@ -535,6 +537,7 @@ export class WorldBuilder {
       size: size.clone(),
       mesh,
       top: center.y + size.y / 2,
+      rotationY: 0,
       velocity: new THREE.Vector3()
     };
     this.platforms.push(platform);
@@ -565,6 +568,7 @@ export class WorldBuilder {
       size: size.clone(),
       mesh: group,
       top: center.y + size.y / 2,
+      rotationY: rotation,
       velocity: new THREE.Vector3()
     };
     this.platforms.push(platform);
@@ -584,17 +588,10 @@ export class WorldBuilder {
     const baseSize = longAlongX
       ? new THREE.Vector3(size.x, railHeight, railThickness)
       : new THREE.Vector3(railThickness, railHeight, size.z);
-    const cos = Math.abs(Math.cos(rotation));
-    const sin = Math.abs(Math.sin(rotation));
-    const aabbSize = new THREE.Vector3(
-      baseSize.x * cos + baseSize.z * sin,
-      baseSize.y,
-      baseSize.x * sin + baseSize.z * cos
-    );
-    this.addRailSegment(id, worldCenter, aabbSize, false);
+    this.addCollisionBarrier(id, worldCenter, baseSize, rotation);
   }
 
-  private addRailSegment(id: string, center: THREE.Vector3, size: THREE.Vector3, addPosts = true): Barrier {
+  private addRailSegment(id: string, center: THREE.Vector3, size: THREE.Vector3, addPosts = true, rotationY = 0): Barrier {
     const group = new THREE.Group();
     const plank = createLowPolyBox(size, "#6a4a36", new THREE.Vector3(0, 0, 0));
     group.add(plank);
@@ -619,15 +616,33 @@ export class WorldBuilder {
     }
 
     group.position.copy(center);
+    group.rotation.y = rotationY;
     this.scene.add(group);
-    const barrier = {
+    const barrier = this.createBarrierRecord(id, center, size, group, rotationY);
+    this.barriers.push(barrier);
+    return barrier;
+  }
+
+  private addCollisionBarrier(id: string, center: THREE.Vector3, size: THREE.Vector3, rotationY = 0): Barrier {
+    const barrier = this.createBarrierRecord(id, center, size, new THREE.Object3D(), rotationY);
+    this.barriers.push(barrier);
+    return barrier;
+  }
+
+  private createBarrierRecord(
+    id: string,
+    center: THREE.Vector3,
+    size: THREE.Vector3,
+    mesh: THREE.Object3D,
+    rotationY = 0
+  ): Barrier {
+    return {
       id,
       center: center.clone(),
       size: size.clone(),
-      mesh: group
+      mesh,
+      rotationY
     };
-    this.barriers.push(barrier);
-    return barrier;
   }
 
   private addSeed(position: THREE.Vector3): void {

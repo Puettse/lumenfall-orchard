@@ -25,6 +25,7 @@ export type Platform = {
   size: THREE.Vector3;
   mesh: THREE.Object3D;
   top: number;
+  rotationY?: number;
   velocity?: THREE.Vector3;
   update?: (time: number, dt: number) => void;
 };
@@ -34,6 +35,7 @@ export type Barrier = {
   center: THREE.Vector3;
   size: THREE.Vector3;
   mesh: THREE.Object3D;
+  rotationY?: number;
 };
 
 export type Collectible = {

@@ -39,6 +39,7 @@ export class LumenfallGame {
   private readonly particles: ParticleSystem;
   private readonly world: WorldState;
   private readonly player: PlayerController;
+  private readonly playerShadow: THREE.Mesh;
   private readonly hud: HudElements;
   private readonly titleOverlay: HTMLElement;
   private readonly pauseOverlay: HTMLElement;
@@ -96,20 +97,22 @@ export class LumenfallGame {
     this.root.classList.toggle("touch-ui", window.matchMedia?.("(pointer: coarse)").matches ?? false);
     const viewport = this.query<HTMLElement>("#viewport");
     this.renderer = new THREE.WebGLRenderer({
-      antialias: true,
+      antialias: false,
       powerPreference: "high-performance"
     });
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.16;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.15));
+    this.renderer.toneMapping = THREE.NoToneMapping;
+    this.renderer.toneMappingExposure = 1;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.BasicShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     viewport.append(this.renderer.domElement);
 
     this.world = new WorldBuilder(this.scene).build();
     this.player = new PlayerController(this.world.startPosition);
     this.scene.add(this.player.mesh);
+    this.playerShadow = this.createPlayerShadow();
+    this.scene.add(this.playerShadow);
     this.player.setCheckpoint(this.world.startPosition.clone().add(new THREE.Vector3(0, -1.2, 0)));
     this.particles = new ParticleSystem(this.scene);
     this.input = new InputController(this.root);
@@ -190,11 +193,22 @@ export class LumenfallGame {
           z: this.player.position.z,
           velocityY: this.player.velocity.y,
           grounded: this.player.grounded,
-          gliding: this.player.gliding
+          gliding: this.player.gliding,
+          platform: this.player.getGroundedPlatformId()
         },
         gateOpen: this.gateOpen,
         objective: this.hud.objective.textContent
       }),
+      startRun: () => this.startRun(),
+      teleport: (x: number, y: number, z: number) => {
+        this.player.position.set(x, y, z);
+        this.player.velocity.set(0, 0, 0);
+        this.player.mesh.position.copy(this.player.position);
+        this.cameraPosition.copy(this.player.position).add(new THREE.Vector3(0, 5.25, 9.6));
+      },
+      setCameraYaw: (yaw: number) => {
+        this.cameraYaw = yaw;
+      },
       samplePixels: () => this.samplePixels()
     };
   }
@@ -345,6 +359,7 @@ export class LumenfallGame {
     }
 
     this.updateCamera(dt);
+    this.updatePlayerShadow();
     this.particles.update(dt);
     this.updateToast(dt);
     this.updateVignette(dt);
@@ -607,6 +622,64 @@ export class LumenfallGame {
     return target.clone().addScaledVector(direction, Math.max(4.2, hit.distance - 0.95));
   }
 
+  private createPlayerShadow(): THREE.Mesh {
+    const shadow = new THREE.Mesh(
+      new THREE.CircleGeometry(0.78, 24),
+      new THREE.MeshBasicMaterial({
+        color: "#120f1a",
+        transparent: true,
+        opacity: 0.36,
+        depthWrite: false
+      })
+    );
+    shadow.name = "player-fake-shadow";
+    shadow.rotation.x = -Math.PI / 2;
+    shadow.renderOrder = 2;
+    shadow.visible = false;
+    return shadow;
+  }
+
+  private updatePlayerShadow(): void {
+    const ground = this.findGroundBelow(this.player.position);
+    if (!ground || this.mode === GameMode.Title) {
+      this.playerShadow.visible = false;
+      return;
+    }
+
+    const height = Math.max(0, this.player.position.y - ground.top);
+    const fade = Math.max(0, Math.min(1, 1 - height / 7));
+    const scale = 0.42 + fade * 0.68;
+    this.playerShadow.visible = fade > 0.08;
+    this.playerShadow.position.set(this.player.position.x, ground.top + 0.026, this.player.position.z);
+    this.playerShadow.scale.set(scale, scale * 0.72, 1);
+    const material = this.playerShadow.material;
+    if (material instanceof THREE.MeshBasicMaterial) {
+      material.opacity = 0.12 + fade * 0.24;
+    }
+  }
+
+  private findGroundBelow(position: THREE.Vector3): { top: number } | null {
+    let bestTop = -Infinity;
+    for (const platform of this.world.platforms) {
+      if (platform.top > position.y + 0.35 || position.y - platform.top > 9) {
+        continue;
+      }
+      if (!pointWithinRotatedRect(
+        position.x,
+        position.z,
+        platform.center.x,
+        platform.center.z,
+        platform.size.x / 2 + 0.45,
+        platform.size.z / 2 + 0.45,
+        platform.rotationY ?? 0
+      )) {
+        continue;
+      }
+      bestTop = Math.max(bestTop, platform.top);
+    }
+    return bestTop > -Infinity ? { top: bestTop } : null;
+  }
+
   private animateWorld(time: number, dt: number): void {
     this.world.platforms.forEach((platform) => platform.update?.(time, dt));
     this.world.collectibles.forEach((collectible, index) => {
@@ -816,7 +889,8 @@ export class LumenfallGame {
         z: Number(this.player.position.z.toFixed(2)),
         velocityY: Number(this.player.velocity.y.toFixed(2)),
         grounded: this.player.grounded,
-        gliding: this.player.gliding
+        gliding: this.player.gliding,
+        platform: this.player.getGroundedPlatformId()
       },
       gateOpen: this.gateOpen,
       objective: this.hud.objective.textContent,
@@ -955,4 +1029,22 @@ const formatTime = (seconds: number): string => {
   const minutes = Math.floor(seconds / 60);
   const remaining = Math.floor(seconds % 60);
   return `${String(minutes).padStart(2, "0")}:${String(remaining).padStart(2, "0")}`;
+};
+
+const pointWithinRotatedRect = (
+  x: number,
+  z: number,
+  centerX: number,
+  centerZ: number,
+  halfX: number,
+  halfZ: number,
+  rotationY: number
+): boolean => {
+  const dx = x - centerX;
+  const dz = z - centerZ;
+  const cos = Math.cos(rotationY);
+  const sin = Math.sin(rotationY);
+  const localX = dx * cos - dz * sin;
+  const localZ = dx * sin + dz * cos;
+  return Math.abs(localX) <= halfX && Math.abs(localZ) <= halfZ;
 };
