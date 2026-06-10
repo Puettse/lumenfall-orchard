@@ -1,0 +1,26 @@
+{
+  "name": "lumenfall-orchard",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 127.0.0.1",
+    "build": "tsc && vite build",
+    "build:remote": "npm run build && node scripts/create-remote-update-manifest.mjs",
+    "preview": "vite preview --host 127.0.0.1",
+    "android:init": "cap add android",
+    "android:sync": "npm run build && cap sync android",
+    "android:open": "cap open android"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0",
+    "three": "^0.182.0"
+  },
+  "devDependencies": {
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/cli": "^8.0.0",
+    "@types/three": "^0.182.0",
+    "typescript": "^6.0.3",
+    "vite": "^8.0.16"
+  }
+}
