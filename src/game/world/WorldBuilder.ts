@@ -719,6 +719,9 @@ const createSkyGradientTexture = (): THREE.CanvasTexture => {
 
   const texture = new THREE.CanvasTexture(canvas);
   texture.colorSpace = THREE.SRGBColorSpace;
+  texture.magFilter = THREE.NearestFilter;
+  texture.minFilter = THREE.NearestFilter;
+  texture.generateMipmaps = false;
   texture.needsUpdate = true;
   return texture;
 };

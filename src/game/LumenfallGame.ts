@@ -103,7 +103,7 @@ export class LumenfallGame {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.15));
     this.renderer.toneMapping = THREE.NoToneMapping;
     this.renderer.toneMappingExposure = 1;
-    this.renderer.shadowMap.enabled = true;
+    this.renderer.shadowMap.enabled = false;
     this.renderer.shadowMap.type = THREE.BasicShadowMap;
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     viewport.append(this.renderer.domElement);

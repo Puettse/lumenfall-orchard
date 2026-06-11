@@ -20,22 +20,32 @@ export const palette = {
 
 export const makeMat = (
   color: string,
-  options: { emissive?: string; roughness?: number; metalness?: number; transparent?: boolean; opacity?: number } = {}
-): THREE.MeshStandardMaterial => {
-  const materialOptions: THREE.MeshStandardMaterialParameters = {};
-  materialOptions.color = color;
-  materialOptions.emissive = options.emissive ?? "#000000";
-  materialOptions.emissiveIntensity = options.emissive ? 0.6 : 0;
-  materialOptions.roughness = options.roughness ?? 0.82;
-  materialOptions.metalness = options.metalness ?? 0.02;
-  materialOptions.flatShading = true;
+  options: {
+    emissive?: string;
+    roughness?: number;
+    metalness?: number;
+    transparent?: boolean;
+    opacity?: number;
+    vertexColors?: boolean;
+  } = {}
+): THREE.MeshBasicMaterial => {
+  const displayColor = new THREE.Color(color);
+  if (options.emissive) {
+    displayColor.lerp(new THREE.Color(options.emissive), 0.34);
+  }
+  const materialOptions: THREE.MeshBasicMaterialParameters = {
+    color: displayColor,
+    fog: true,
+    toneMapped: false,
+    vertexColors: options.vertexColors === true
+  };
   if (typeof options.transparent === "boolean") {
     materialOptions.transparent = options.transparent;
   }
   if (typeof options.opacity === "number") {
     materialOptions.opacity = options.opacity;
   }
-  return new THREE.MeshStandardMaterial(materialOptions);
+  return new THREE.MeshBasicMaterial(materialOptions);
 };
 
 export const createLowPolyBox = (
@@ -43,11 +53,33 @@ export const createLowPolyBox = (
   color: string,
   position: THREE.Vector3
 ): THREE.Mesh => {
-  const mesh = new THREE.Mesh(new THREE.BoxGeometry(size.x, size.y, size.z), makeMat(color));
+  const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
+  applyRetroVertexLight(geometry);
+  const mesh = new THREE.Mesh(geometry, makeMat(color, { vertexColors: true }));
   mesh.position.copy(position);
-  mesh.castShadow = true;
-  mesh.receiveShadow = true;
+  mesh.castShadow = false;
+  mesh.receiveShadow = false;
   return mesh;
+};
+
+const applyRetroVertexLight = (geometry: THREE.BufferGeometry): void => {
+  const normals = geometry.getAttribute("normal");
+  if (!normals) {
+    return;
+  }
+
+  const colors: number[] = [];
+  for (let index = 0; index < normals.count; index += 1) {
+    const normalY = normals.getY(index);
+    const normalX = normals.getX(index);
+    const normalZ = normals.getZ(index);
+    const topLight = normalY > 0.45 ? 1 : 0;
+    const bottomShade = normalY < -0.45 ? 1 : 0;
+    const sideWarmth = Math.max(0, normalX * -0.18 + normalZ * 0.12);
+    const shade = THREE.MathUtils.clamp(0.66 + topLight * 0.36 - bottomShade * 0.28 + sideWarmth, 0.42, 1.08);
+    colors.push(shade, shade, shade);
+  }
+  geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
 };
 
 export const createIsland = (
