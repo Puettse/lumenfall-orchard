@@ -1,5 +1,6 @@
 const devtoolsUrl = process.env.DEVTOOLS_URL ?? "http://127.0.0.1:9222/json/list";
 const gameUrl = process.env.GAME_URL ?? `http://127.0.0.1:5173/?qa=avatar-${Date.now()}`;
+const shouldNavigate = gameUrl !== "current";
 
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -46,8 +47,10 @@ const main = async () => {
 
   await send("Runtime.enable");
   await send("Page.enable");
-  await send("Page.navigate", { url: gameUrl });
-  await delay(3000);
+  if (shouldNavigate) {
+    await send("Page.navigate", { url: gameUrl });
+    await delay(3000);
+  }
 
   const readyResult = await send("Runtime.evaluate", {
     awaitPromise: true,
@@ -81,6 +84,16 @@ const main = async () => {
     expression: "window.dispatchEvent(new KeyboardEvent('keydown',{code:'KeyW',key:'w',bubbles:true}));"
   });
   await delay(1400);
+  const duringMoveResult = await send("Runtime.evaluate", {
+    returnByValue: true,
+    expression: `
+      ({
+        state: window.__LUMENFALL_DEBUG__?.state?.(),
+        pixels: window.__LUMENFALL_DEBUG__?.samplePixels?.(),
+        canvas: !!document.querySelector('canvas')
+      })
+    `
+  });
   await send("Runtime.evaluate", {
     expression: "window.dispatchEvent(new KeyboardEvent('keyup',{code:'KeyW',key:'w',bubbles:true}));"
   });
@@ -100,8 +113,9 @@ const main = async () => {
   console.log(
     JSON.stringify(
       {
-        gameUrl,
+        gameUrl: shouldNavigate ? gameUrl : target.url,
         ready: readyResult.result.result.value,
+        duringMove: duringMoveResult.result.result.value,
         afterMove: moveResult.result.result.value,
         errors
       },
