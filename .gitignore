@@ -7,6 +7,8 @@ screenshots/
 .env
 .env.*
 !.env.example
+scripts/MeshyAI.txt
+scripts/.meshy-cache/
 android/local.properties
 android/.gradle/
 android/build/

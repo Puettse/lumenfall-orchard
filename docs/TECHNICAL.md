@@ -20,6 +20,7 @@ src/
       InputController.ts
       ParticleSystem.ts
       PlayerController.ts
+      GeneratedPlayerAvatar.ts
       ProceduralAssets.ts
       SaveSystem.ts
     world/
@@ -38,6 +39,7 @@ android/
 - `LumenfallGame` owns the scene, game state, camera, HUD, menus, objective logic, and run loop.
 - `WorldBuilder` creates all level geometry, seeds, Moon Pearls, bells, hazards, wind currents, Starflower launch pads, checkpoints, lore markers, and shrine objects.
 - `PlayerController` implements movement physics, coyote time, jump buffering, jumping, gliding, dashing, collision with authored platform boxes, respawn, health, and animation. The run loop clamps frame delta to a non-negative range so fallback timers cannot invert gravity or grow movement timers. Camera-relative right movement was corrected so left/right input no longer runs opposite the view.
+- `GeneratedPlayerAvatar` optionally loads Meshy-generated GLB idle/walk/run states from `public/assets/characters/pip/manifest.json`, converts imported materials to unlit point-filtered retro materials, normalizes the asset scale, and falls back to the procedural Pip model when no generated asset manifest is enabled.
 - `InputController` supports keyboard, gamepad, pointer camera look, and touch controls. Android/coarse-pointer screens get touch-specific title instructions instead of keyboard copy.
 - `AudioDirector` creates procedural WebAudio cues plus sparse ambient tones; the earlier continuous melody loop was removed.
 - `RemoteUpdateManager` optionally checks a hosted update manifest before game boot and redirects to an allowlisted HTTPS game build while keeping the packaged build as fallback.
@@ -98,6 +100,16 @@ android/app/build/outputs/apk/debug/app-debug.apk
 ## Remote Update Builds
 
 Remote updates are disabled unless `VITE_REMOTE_UPDATE_MANIFEST_URL` is set at build time. See `docs/REMOTE_UPDATES.md` for the hosted manifest format and required Android allowlist variables.
+
+## Meshy Asset Pipeline
+
+Pip's generated character art and movement clips can be produced offline:
+
+```powershell
+npm run assets:meshy:pip
+```
+
+The script reads `scripts/MeshyAI.txt`, creates a low-poly text-to-3D preview, refines it with diffuse-only texture settings, rigs the resulting humanoid, downloads GLB idle/walk/run files, and updates the static asset manifest. See `docs/MESHY_ASSET_PIPELINE.md`.
 
 ## QA Performed
 

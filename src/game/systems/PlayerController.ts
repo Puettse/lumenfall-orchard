@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import { Barrier, FrameInput, Platform } from "../types";
+import { GeneratedPlayerAvatar } from "./GeneratedPlayerAvatar";
 import { createPlayerMesh } from "./ProceduralAssets";
 
 export type PlayerEvents = {
@@ -16,6 +17,7 @@ const scratchPush = new THREE.Vector3();
 
 export class PlayerController {
   readonly mesh = createPlayerMesh();
+  private readonly generatedAvatar = new GeneratedPlayerAvatar(this.mesh);
   readonly position = new THREE.Vector3();
   readonly velocity = new THREE.Vector3();
   readonly checkpoint = new THREE.Vector3();
@@ -61,6 +63,10 @@ export class PlayerController {
 
   getGroundedPlatformId(): string | null {
     return this.groundedPlatform?.id ?? null;
+  }
+
+  getAvatarDebug() {
+    return this.generatedAvatar.debugSnapshot();
   }
 
   damage(amount: number): boolean {
@@ -336,6 +342,14 @@ export class PlayerController {
     }
 
     this.mesh.visible = this.invulnerableTimer <= 0 || Math.sin(this.animationTime * 36) > -0.2;
+    this.generatedAvatar.update(dt, {
+      moving,
+      grounded: this.grounded,
+      gliding: this.gliding,
+      dashTimer: this.dashTimer,
+      speed,
+      animationTime: this.animationTime
+    });
   }
 }
 

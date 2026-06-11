@@ -84,13 +84,29 @@ Current GitHub Pages update endpoints:
 - `https://puettse.github.io/lumenfall-orchard/manifest.json`
 - `https://puettse.github.io/lumenfall-orchard/index.html`
 
+## Generated Character Assets
+
+The game can use Meshy AI as an offline asset pipeline for Pip's character model and movement animations:
+
+```powershell
+npm run assets:meshy:pip
+```
+
+On this Windows machine, set `$env:NODE_OPTIONS='--use-system-ca'` first if Node cannot verify Meshy's TLS certificate.
+
+The script reads the local key from `scripts/MeshyAI.txt`, generates and rigs Pip through Meshy, downloads GLB idle/walk/run assets into `public/assets/characters/pip/`, and updates the static manifest. The key is ignored by git and is never bundled into the browser build or APK.
+
+See [MESHY_ASSET_PIPELINE.md](docs/MESHY_ASSET_PIPELINE.md) for details.
+
 ## Assets
 
-All game assets are procedural or code-authored:
+Most game assets are procedural or code-authored:
 
 - Low-poly character meshes
 - Trees, bells, seeds, Moon Pearls, Starflower pads, ruins, shrine, bridges, hazards, particles
 - Ambient lighting, fog, gradients, generated audio tones, and sparse ambient pulses
+
+If Meshy-generated Pip assets are present, the runtime loads them as static GLB files with procedural fallback.
 
 No proprietary or paid assets are required.
 

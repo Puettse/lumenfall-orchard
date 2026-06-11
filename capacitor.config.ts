@@ -30,6 +30,11 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: "https",
     ...(remoteUpdateHosts.length > 0 ? { allowNavigation: remoteUpdateHosts } : {})
+  },
+  plugins: {
+    SystemBars: {
+      insetsHandling: "disable"
+    }
   }
 };
 

@@ -1,0 +1,14 @@
+{
+  "enabled": true,
+  "source": "meshy",
+  "version": "2026-06-11T19:47:24.652Z",
+  "targetHeight": 2.05,
+  "scale": 1,
+  "rotationY": 3.141592653589793,
+  "heightOffset": 0,
+  "states": {
+    "idle": "pip-idle.glb",
+    "walk": "pip-walk.glb",
+    "run": "pip-run.glb"
+  }
+}

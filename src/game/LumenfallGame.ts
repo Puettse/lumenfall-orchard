@@ -196,6 +196,7 @@ export class LumenfallGame {
           gliding: this.player.gliding,
           platform: this.player.getGroundedPlatformId()
         },
+        avatar: this.player.getAvatarDebug(),
         gateOpen: this.gateOpen,
         objective: this.hud.objective.textContent
       }),

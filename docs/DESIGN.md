@@ -63,6 +63,7 @@ The visual style is low-poly twilight fantasy:
 - Pearl relics and animated flower launch pads as readable reward and traversal props.
 - Simple shrine and windmill silhouettes.
 - Heavy fog, warm key light, cool fill light, and scanline overlay.
+- Pip can be upgraded from the procedural body to an original Meshy-generated low-poly humanoid GLB with rigged walk/run movement while keeping the same silhouette language, unlit texture treatment, and glide/dash VFX.
 
 ## Audio Direction
 
