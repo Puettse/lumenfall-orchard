@@ -9,6 +9,7 @@
     "build:remote": "npm run build && node scripts/create-remote-update-manifest.mjs",
     "assets:meshy:pip": "node scripts/generate-meshy-pip.mjs",
     "qa:avatar": "node scripts/probe-avatar-devtools.mjs",
+    "qa:dungeon": "node scripts/probe-dungeon-devtools.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "android:init": "cap add android",
     "android:sync": "npm run build && cap sync android",

@@ -145,7 +145,7 @@ export class LumenfallGame {
     this.resize();
     window.addEventListener("resize", this.resize);
     this.updateHud();
-    this.showToast("Lumenfall Orchard awaits. Restore the shrine before night settles.", 4.5);
+    this.showToast("Moonroot Keep is sealed, but its bells still answer. Restore the shrine before night settles.", 4.5);
   }
 
   start(): void {
@@ -223,6 +223,11 @@ export class LumenfallGame {
     this.elapsed = 0;
     this.gateOpen = false;
     this.gateAnnounced = false;
+    const closedGateY = typeof this.world.gate.userData.closedY === "number" ? this.world.gate.userData.closedY : 0.5;
+    this.world.gate.position.y = closedGateY;
+    if (this.world.gateBarrier) {
+      this.world.gateBarrier.center.y = closedGateY + 1.55;
+    }
     this.hurtPulse = 0;
     this.cameraShake = 0;
     this.cameraKick = 0;
@@ -257,11 +262,10 @@ export class LumenfallGame {
       this.updateCheckpointVisual(checkpoint);
     });
     this.world.gate.visible = true;
-    this.world.gate.position.set(0, 0, 0);
     this.player.setCheckpoint(this.world.startPosition.clone().add(new THREE.Vector3(0, -1.2, 0)));
     this.player.reset(this.world.startPosition);
     this.cameraYaw = Math.PI * 0.18;
-    this.showToast("Find 16 seeds, ring 3 Memory Bells, then awaken the Beacon Shrine.", 4.2);
+    this.showToast("Explore the keep, find 16 seeds, ring 3 Memory Bells, then open the Beacon Shrine.", 4.2);
     this.setMode(GameMode.Playing);
   }
 
@@ -339,7 +343,7 @@ export class LumenfallGame {
       if (events.fell) {
         this.audio.play("hurt");
         this.cameraShake = Math.max(this.cameraShake, 0.4);
-        this.showToast("The clouds caught Pip and returned them to the last lantern.", 2.8);
+        this.showToast("A keeper sigil pulled Pip back to the last lantern.", 2.8);
       }
 
       if (this.player.dashTimer > 0 || this.player.gliding) {
@@ -386,7 +390,7 @@ export class LumenfallGame {
         this.cameraShake = Math.max(this.cameraShake, 0.18);
         this.cameraKick = Math.max(this.cameraKick, 0.25);
         this.particles.burst(collectible.position, "blue", 26);
-        this.showToast(`Moon Pearl found (${this.relicCount}/5). The old orchard keeps optional memories.`, 3.1);
+        this.showToast(`Moon Pearl found (${this.relicCount}/5). The keep hides optional memories behind old stone.`, 3.1);
       } else {
         this.seedCount += 1;
         this.audio.play("collect");
@@ -394,7 +398,7 @@ export class LumenfallGame {
         this.particles.burst(collectible.position, "gold", 16);
         this.save.recordSeeds(this.seedCount);
         if (this.seedCount === requiredSeeds) {
-          this.showToast("The seeds hum in rhythm. The shrine gate wants the three bells now.", 3.8);
+          this.showToast("The seeds hum in rhythm. The moon gate wants the three bells now.", 3.8);
         } else if (this.seedCount % 4 === 0) {
           this.showToast(`${this.seedCount} seeds glow in Pip's satchel.`, 2.1);
         }
@@ -494,7 +498,7 @@ export class LumenfallGame {
       if (!current.discovered) {
         current.discovered = true;
         this.audio.play("checkpoint");
-        this.showToast("A skybreath current lifts Pip. Hold glide to steer the climb.", 3.2);
+        this.showToast("A moon draft lifts Pip. Hold glide to steer the climb.", 3.2);
       }
     }
   }
@@ -523,7 +527,7 @@ export class LumenfallGame {
 
       if (!pad.discovered) {
         pad.discovered = true;
-        this.showToast("Starflower spring! Chain it with glide or dash to reach higher ledges.", 2.8);
+        this.showToast("Moon spring tile! Chain it with glide or dash to reach higher ledges.", 2.8);
       }
     }
   }
@@ -533,10 +537,13 @@ export class LumenfallGame {
     if (canOpen && !this.gateOpen) {
       this.gateOpen = true;
       this.audio.play("gate");
-      this.showToast("The moon gate exhales. The Beacon Shrine is open.", 3.2);
+      this.showToast("The moon gate rises. The Beacon Shrine is open.", 3.2);
     }
     if (this.gateOpen) {
       this.world.gate.position.y = Math.min(3.8, this.world.gate.position.y + dt * 3.6);
+      if (this.world.gateBarrier) {
+        this.world.gateBarrier.center.y = this.world.gate.position.y + 1.55;
+      }
       if (!this.gateAnnounced && this.world.gate.position.y > 1.8) {
         this.gateAnnounced = true;
       }
@@ -568,16 +575,16 @@ export class LumenfallGame {
     this.particles.burst(this.world.shrinePosition.clone().add(new THREE.Vector3(0, 2.8, 0)), "gold", 40);
     this.save.recordWin(this.elapsed, this.seedCount);
     const timeText = formatTime(this.elapsed);
-    this.hud.winBody.textContent = `The Beacon Shrine blooms again. You restored ${this.seedCount}/24 seeds, found ${this.relicCount}/5 Moon Pearls, and rang all three Memory Bells in ${timeText}.`;
+    this.hud.winBody.textContent = `The Beacon Shrine burns again inside Moonroot Keep. You restored ${this.seedCount}/24 seeds, found ${this.relicCount}/5 Moon Pearls, and rang all three Memory Bells in ${timeText}.`;
     const save = this.save.snapshot;
     this.hud.bestBody.textContent = `Best: ${save.bestSeeds}/24 seeds${save.bestTime ? `, ${formatTime(save.bestTime)}` : ""}. Clears: ${save.wins}.`;
     this.setMode(GameMode.Won);
   }
 
   private updateCamera(dt: number): void {
-    const target = this.mode === GameMode.Title ? new THREE.Vector3(6, 4.4, -8) : this.player.position.clone().add(new THREE.Vector3(0, 0.95, 0));
-    const distance = this.player.gliding ? 11.4 : 9.6;
-    const height = this.player.gliding ? 6.2 : 5.25;
+    const target = this.mode === GameMode.Title ? new THREE.Vector3(-17, 2.7, 8) : this.player.position.clone().add(new THREE.Vector3(0, 0.95, 0));
+    const distance = this.player.gliding ? 7.2 : 6.2;
+    const height = this.player.gliding ? 4.2 : 3.35;
     const offset = new THREE.Vector3(Math.sin(this.cameraYaw) * distance, height, Math.cos(this.cameraYaw) * distance);
     const lookahead = this.player.velocity.clone().multiplyScalar(0.08);
     lookahead.y = 0;
@@ -620,7 +627,7 @@ export class LumenfallGame {
       return desired;
     }
 
-    return target.clone().addScaledVector(direction, Math.max(4.2, hit.distance - 0.95));
+    return target.clone().addScaledVector(direction, Math.max(2.35, hit.distance - 0.72));
   }
 
   private createPlayerShadow(): THREE.Mesh {
@@ -741,18 +748,9 @@ export class LumenfallGame {
       }
     });
     this.scene.traverse((object) => {
-      if (object.name === "windmill-blades") {
-        object.rotation.z += dt * 1.7;
-      }
       if (object.name === "beacon") {
         object.rotation.y += dt * 0.8;
         object.scale.setScalar(1 + Math.sin(time * 3) * 0.08);
-      }
-      if (object.name === "twinkle-star") {
-        object.scale.setScalar(0.7 + Math.sin(time * 1.7 + object.position.x) * 0.28);
-      }
-      if (object.name === "waterfall") {
-        object.position.y = -3.9 + Math.sin(time * 2) * 0.08;
       }
     });
   }
@@ -922,14 +920,14 @@ export class LumenfallGame {
   private renderShell(): string {
     return `
       <main class="game-shell">
-        <section id="viewport" class="viewport" aria-label="Lumenfall Orchard game viewport"></section>
+        <section id="viewport" class="viewport" aria-label="Moonroot Keep game viewport"></section>
         <div class="scanlines" aria-hidden="true"></div>
         <div id="hurt-vignette" class="hurt-vignette" aria-hidden="true"></div>
         <div id="debug-probe" class="hidden" aria-hidden="true"></div>
 
         <header class="hud">
           <div class="hud-title">
-            <strong>Lumenfall Orchard</strong>
+            <strong>Moonroot Keep</strong>
             <span id="hud-objective">Find 16 seeds</span>
           </div>
           <div class="hud-cluster">
@@ -962,9 +960,9 @@ export class LumenfallGame {
         <section id="title-overlay" class="overlay title-overlay">
           <div class="title-copy">
             <p class="eyebrow">Original 3D retro adventure</p>
-            <h1>Lumenfall Orchard</h1>
+            <h1>Moonroot Keep</h1>
             <p>
-              Sprint, glide, and spark-dash through a floating orchard where every bell remembers why the island is falling.
+              Sprint, glide, and spark-dash through sealed halls, raised ledges, false walls, and bell rooms beneath the old orchard.
             </p>
             <div class="title-actions">
               <button type="button" class="primary" id="start-button">Begin Courier Run</button>
@@ -987,7 +985,7 @@ export class LumenfallGame {
         <section id="pause-overlay" class="overlay modal hidden">
           <div class="modal-panel">
             <h2>Paused</h2>
-            <p>The orchard waits. Your checkpoint and progress are held for this run.</p>
+            <p>The keep waits. Your checkpoint and progress are held for this run.</p>
             <button type="button" class="primary" id="resume-button">Resume</button>
             <button type="button" id="pause-restart-button">Restart Run</button>
           </div>

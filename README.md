@@ -1,10 +1,10 @@
-# Lumenfall Orchard
+# Lumenfall Orchard: Moonroot Keep
 
-An original low-poly 3D retro adventure platformer built for HTML/WebGL and Android APK export.
+An original low-poly 3D retro dungeon adventure platformer built for HTML/WebGL and Android APK export.
 
 ## Concept
 
-You play as Pip, a tiny star-forged courier sent to revive a drifting orchard island before night consumes it. The island is a compact vertical slice with broken sky bridges, a windmill climb, secret grottoes, three memory bells, light seeds, Moon Pearls, Starflower spring pads, hazards, checkpoints, and a shrine gate that opens only when the orchard has enough light.
+You play as Pip, a tiny star-forged courier exploring Moonroot Keep, a sealed stone structure beneath the old orchard. The vertical slice is now a connected dungeon with a flat starting hall, defined walls, ceilings, corridors, raised ledges, bell rooms, secret archives, gloom hazards, checkpoints, Moon Pearls, moon-draft lifts, spring tiles, and a physical shrine gate.
 
 ## Controls
 
@@ -21,9 +21,9 @@ The platforming includes coyote time and jump buffering, so late and slightly ea
 
 ## Objective
 
-Collect at least 16 Lumen Seeds and ring all 3 Memory Bells. Then reach the Beacon Shrine at the far end of the island and activate it to win. There are 24 seeds total, 5 optional Moon Pearls, and several hidden route rewards for replay.
+Collect at least 16 Lumen Seeds and ring all 3 Memory Bells. Then open the moon gate, reach the Beacon Shrine in the final hall, and activate it to win. There are 24 seeds total, 5 optional Moon Pearls, and several hidden route rewards for replay.
 
-The HUD compass points toward the current priority: nearby seeds first, then unrung bells, then the shrine. Blue Skybreath updrafts act as traversal set pieces; hold glide inside them to steer upward. Starflower pads bounce Pip into high routes and can be chained with glide or dash.
+The HUD compass points toward the current priority: nearby seeds first, then unrung bells, then the shrine. Blue moon-draft lifts and spring tiles act as indoor traversal set pieces; hold glide inside lifts to steer upward and chain spring tiles with dash for raised ledges.
 
 ## Web Run
 
@@ -103,8 +103,8 @@ See [MESHY_ASSET_PIPELINE.md](docs/MESHY_ASSET_PIPELINE.md) for details.
 Most game assets are procedural or code-authored:
 
 - Low-poly character meshes
-- Trees, bells, seeds, Moon Pearls, Starflower pads, ruins, shrine, bridges, hazards, particles
-- Ambient lighting, fog, gradients, generated audio tones, and sparse ambient pulses
+- Dungeon floors, walls, ceilings, arches, pillars, torches, bells, seeds, Moon Pearls, moon spring tiles, shrine, hazards, and particles
+- Enclosed fog, unlit torch glow props, generated audio tones, and sparse ambient pulses
 
 If Meshy-generated Pip assets are present, the runtime loads them as static GLB files with procedural fallback.
 

@@ -172,7 +172,7 @@ export class PlayerController {
       events.landed = true;
     }
 
-    if (this.position.y < -26) {
+    if (this.position.y < -8) {
       this.health = Math.max(25, this.health - 18);
       this.reset(this.checkpoint);
       events.fell = true;

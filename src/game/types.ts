@@ -112,5 +112,6 @@ export type WorldState = {
   shrine: THREE.Object3D;
   shrinePosition: THREE.Vector3;
   gate: THREE.Object3D;
+  gateBarrier?: Barrier;
   startPosition: THREE.Vector3;
 };
